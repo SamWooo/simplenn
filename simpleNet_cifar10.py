@@ -114,7 +114,7 @@ def test(net, testloader, device):
     print('Accuracy of the network on the 10000 test images: %d %%' % (
         100 * correct / total))
 
-num_worker = 2
+num_worker = 8
 
 # 定义数据预处理操作
 transform = transforms.Compose([
@@ -125,10 +125,13 @@ transform = transforms.Compose([
 ])
 # 下载并加载训练数据集
 trainset = datasets.CIFAR10(root='./data/cifar_train', train=True, download=True, transform=transform)
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=64, shuffle=True, num_workers=num_worker)
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=128, shuffle=True, num_workers=num_worker)
+print('train data length: ', len(trainloader))
+
 # 下载并加载测试数据集
 testset = datasets.CIFAR10(root='./data/cifar_test', train=False, download=True, transform=transform)
-testloader = torch.utils.data.DataLoader(testset, batch_size=64, shuffle=False, num_workers=num_worker)
+testloader = torch.utils.data.DataLoader(testset, batch_size=128, shuffle=False, num_workers=num_worker)
+print('test data length: ', len(testloader))
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print('device: ', device, ', gpu cnt: ', torch.cuda.device_count())
@@ -150,7 +153,7 @@ if use_wandb:
 
 train_net = True
 if train_net:
-    epochs = 1000
+    epochs = 20
     start_time = time.time()
     train(trainNet, trainloader, lossfunc, optimizer, epochs, device)
     cost_time = time.time() - start_time

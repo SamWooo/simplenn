@@ -1,15 +1,15 @@
 import torch
 import numpy as np
 import torch.nn as nn
-import math
 import time
+import datetime
 import torch.nn.functional as F
 import torch.optim as optim
 import torchvision
 from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets, transforms
 import matplotlib.pyplot as plt
-
+import wandb
 
 class Net(nn.Module):
     def __init__(self):
@@ -31,34 +31,46 @@ class Net(nn.Module):
         return x
 
 def train(net, trainloader, lossfunc, optimizer, epochs, device):
-    for epoch in range(epochs):  # 在数据集上训练两遍
-        running_loss = 0.0
-        for i, data in enumerate(trainloader, 0):
-            # 获取输入数据
-            inputs, labels = data
-            inputs = inputs.to(device)
-            labels = labels.to(device)
-            # 梯度清零
-            optimizer.zero_grad()
-            # 前向传播
-            outputs = net(inputs)
-            # 计算损失
-            loss = lossfunc(outputs, labels)
-            # 反向传播
-            loss.backward()
-            # 更新参数
-            optimizer.step()
-            # 打印统计信息
-            running_loss += loss.item()
-            #if i % 200 == 199:  # 每2000个批次打印一次
-                #print('[%d, %5d] loss: %.3f' %
-                #      (epoch + 1, i + 1, running_loss / 2000))
-                #running_loss = 0.0
-        datalen = len(trainloader)
-        if (epoch + 1) % (epochs / 100) == 0:
-            print('epoch %d loss: %.3f' %
-                    (epoch + 1, running_loss / datalen))
-    print('Finished Training')
+    try:
+        for epoch in range(epochs):  # 在数据集上训练两遍
+            running_loss = 0.0
+            for i, data in enumerate(trainloader, 0):
+                # 获取输入数据
+                inputs, labels = data
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+                # 梯度清零
+                optimizer.zero_grad()
+                # 前向传播
+                outputs = net(inputs)
+                # 计算损失
+                loss = lossfunc(outputs, labels)
+                # 反向传播
+                loss.backward()
+                # 更新参数
+                optimizer.step()
+                # 打印统计信息
+                running_loss += loss.item()
+                #if i % 200 == 199:  # 每2000个批次打印一次
+                    #print('[%d, %5d] loss: %.3f' %
+                    #      (epoch + 1, i + 1, running_loss / 2000))
+                    #running_loss = 0.0
+            datalen = len(trainloader)
+            if (epoch + 1) % (epochs / 100) == 0:
+                train_loss = running_loss / datalen
+                print('epoch %d loss: %.3f' %
+                        (epoch + 1, train_loss))
+                if use_wandb:
+                    wandb.log({
+                        "train_loss": train_loss,
+                    })
+        if use_wandb:
+            run_wandb.finish()
+        print('Finished Training')
+    except KeyboardInterrupt:
+        if use_wandb:
+            run_wandb.finish()
+        print("Keyboard interrupt, train finished early")
 
 def imshow(img):
     img = img.to('cpu')
@@ -127,6 +139,14 @@ trainNet = Net().to(device)
 lossfunc = nn.CrossEntropyLoss()
 # 定义优化器
 optimizer = optim.SGD(trainNet.parameters(), lr=0.001, momentum=0.9)
+
+use_wandb = True
+if use_wandb:
+    run_wandb = wandb.init(
+        project="simplenn",
+        name=datetime.datetime.now().strftime("%Y-%m-%d-%H-%M"),
+    )
+    wandb.watch(trainNet)
 
 train_net = True
 if train_net:

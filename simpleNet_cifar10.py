@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import torch.nn as nn
 import math
+import time
 import torch.nn.functional as F
 import torch.optim as optim
 import torchvision
@@ -9,23 +10,6 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets, transforms
 import matplotlib.pyplot as plt
 
-def extract(a, t, x_shape):
-    b, *_ = t.shape
-    out = a.gather(-1, t)
-    return out.reshape(b, *((1,) * (len(x_shape) - 1)))
-
-def testGrad():
-    x = torch.ones(2, 2, requires_grad=True)
-    print('x', x)
-    y = x + 2
-    print('y', y)
-    print('y.grad_fn', y.grad_fn)
-    z = y * y * 3   #   3 x**2 + 12x + 12
-    print('z', z)
-    #out = z.mean()  #   3 x**2 + 12x + 12
-    #print('out', out)
-    z.backward(torch.ones(2, 2)/2)
-    print('x.grad', x.grad)     # 6x/4 + 3
 
 class Net(nn.Module):
     def __init__(self):
@@ -46,12 +30,14 @@ class Net(nn.Module):
         x = self.fc3(x)  # 第三层全连接
         return x
 
-def train(net, trainloader, lossfunc, optimizer, epochs):
+def train(net, trainloader, lossfunc, optimizer, epochs, device):
     for epoch in range(epochs):  # 在数据集上训练两遍
         running_loss = 0.0
         for i, data in enumerate(trainloader, 0):
             # 获取输入数据
             inputs, labels = data
+            inputs = inputs.to(device)
+            labels = labels.to(device)
             # 梯度清零
             optimizer.zero_grad()
             # 前向传播
@@ -64,24 +50,31 @@ def train(net, trainloader, lossfunc, optimizer, epochs):
             optimizer.step()
             # 打印统计信息
             running_loss += loss.item()
-            if i % 200 == 199:  # 每2000个批次打印一次
-                print('[%d, %5d] loss: %.3f' %
-                      (epoch + 1, i + 1, running_loss / 2000))
-                running_loss = 0.0
+            #if i % 200 == 199:  # 每2000个批次打印一次
+                #print('[%d, %5d] loss: %.3f' %
+                #      (epoch + 1, i + 1, running_loss / 2000))
+                #running_loss = 0.0
+        datalen = len(trainloader)
+        if (epoch + 1) % (epochs / 100) == 0:
+            print('epoch %d loss: %.3f' %
+                    (epoch + 1, running_loss / datalen))
     print('Finished Training')
 
 def imshow(img):
+    img = img.to('cpu')
     img = img / 2 + 0.5 # unnormalize
     npimg = img.numpy()
     plt.imshow(np.transpose(npimg, (1, 2, 0)))
     plt.show()
 
-def test(net, testloader):
+def test(net, testloader, device):
     # 加载一些测试图片
     images = None
     labels = None
     for i, data in enumerate(testloader, 0):
         images, labels = data
+        images = images.to(device)
+        labels = labels.to(device)
         break
     # 打印图片
     imshow(torchvision.utils.make_grid(images))
@@ -100,6 +93,8 @@ def test(net, testloader):
     with torch.no_grad():
         for data in testloader:
             images, labels = data
+            images = images.to(device)
+            labels = labels.to(device)
             outputs = net(images)
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
@@ -107,7 +102,7 @@ def test(net, testloader):
     print('Accuracy of the network on the 10000 test images: %d %%' % (
         100 * correct / total))
 
-num_worker = 0
+num_worker = 2
 
 # 定义数据预处理操作
 transform = transforms.Compose([
@@ -123,18 +118,30 @@ trainloader = torch.utils.data.DataLoader(trainset, batch_size=64, shuffle=True,
 testset = datasets.CIFAR10(root='./data/cifar_test', train=False, download=True, transform=transform)
 testloader = torch.utils.data.DataLoader(testset, batch_size=64, shuffle=False, num_workers=num_worker)
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print('device: ', device, ', gpu cnt: ', torch.cuda.device_count())
+
 # 创建网络
-trainNet = Net()
+trainNet = Net().to(device)
 # 定义损失函数
 lossfunc = nn.CrossEntropyLoss()
 # 定义优化器
 optimizer = optim.SGD(trainNet.parameters(), lr=0.001, momentum=0.9)
 
-#train(trainNet, trainloader, lossfunc, optimizer, 10)
-# 保存模型
-#torch.save(trainNet.state_dict(), './cifar_net.pth')
+train_net = True
+if train_net:
+    epochs = 1000
+    start_time = time.time()
+    train(trainNet, trainloader, lossfunc, optimizer, epochs, device)
+    cost_time = time.time() - start_time
+    print('training cost time: ', cost_time)
+    # 保存模型
+    torch.save(trainNet.state_dict(), './pth/cifar_net.pth')
 
 # 加载模型
-testNet = Net()  # 创建新的网络实例
-testNet.load_state_dict(torch.load('./cifar_net.pth'))  # 加载模型参数
-test(testNet, testloader)
+testNet = Net().to(device)  # 创建新的网络实例
+testNet.load_state_dict(torch.load('./pth/cifar_net.pth'))  # 加载模型参数
+test(testNet, testloader, device)
+
+#end of file
+

@@ -70,6 +70,12 @@ def train(net, trainloader, lossfunc, optimizer, epochs):
                 running_loss = 0.0
     print('Finished Training')
 
+def imshow(img):
+    img = img / 2 + 0.5 # unnormalize
+    npimg = img.numpy()
+    plt.imshow(np.transpose(npimg, (1, 2, 0)))
+    plt.show()
+
 def test(net, testloader):
     # 加载一些测试图片
     images = None
@@ -78,7 +84,7 @@ def test(net, testloader):
         images, labels = data
         break
     # 打印图片
-    #plt.imshow(torchvision.utils.make_grid(images).T)
+    imshow(torchvision.utils.make_grid(images))
     # 显示真实的标签
     classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
     print('GroundTruth: ', ' '.join('%5s' % classes[labels[j]] for j in range(4)))

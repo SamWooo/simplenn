@@ -10,9 +10,11 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision
 from torchvision import datasets, transforms
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+#import core.metrics as Metrics
 
 #%matplotlib inline
 
@@ -488,23 +490,29 @@ def sampleModel(model, gaussianModel):
     imgs = generated_images[-1].reshape(8, 8, 3, 32, 32)
     for n_row in range(8):
         for n_col in range(8):
-            f_ax = fig.add_subplot(gs[n_row, n_col])
-            img = np.array((imgs[n_row, n_col].transpose([1, 2, 0]) + 1.0) * 255 / 2, dtype=np.uint8)
-            f_ax.imshow(img)
-            f_ax.axis("off")
+            #f_ax = fig.add_subplot(gs[n_row, n_col])
+            #img = np.array((imgs[n_row, n_col].transpose([1, 2, 0]) + 1.0) * 255 / 2, dtype=np.uint8)
+            img = torch.tensor(imgs[n_row, n_col])
+            torchvision.utils.save_image(img, f"./imgs/{n_row}-{n_col}.png")
+            #f_ax.imshow(img)
+            #f_ax.axis("off")
 
 def showDenoiseSteps(model, gaussianModel):
     generated_images = gaussianModel.sample(model, 32, batch_size=64, channels=3)
-    fig = plt.figure(figsize=(12, 12), constrained_layout=True)
-    gs = fig.add_gridspec(16, 16)
-
-    for n_row in range(16):
-        for n_col in range(16):
-            f_ax = fig.add_subplot(gs[n_row, n_col])
-            t_idx = (timesteps // 16) * n_col if n_col < 15 else -1
-            img = generated_images[t_idx][n_row].reshape(3, 32, 32).transpose([1, 2, 0])
-            f_ax.imshow(np.array((img + 1.0) * 255 / 2, dtype=np.uint8))
-            f_ax.axis("off")
+    #fig = plt.figure(figsize=(12, 12), constrained_layout=True)
+    #gs = fig.add_gridspec(16, 16)
+    for t in range(16):
+        t_idx = (timesteps // 16) * t if t < 15 else -1
+        imgs = generated_images[t_idx].reshape(8, 8, 3, 32, 32)
+        for n_row in range(6, 8):
+            #for n_col in range(8):
+            #f_ax = fig.add_subplot(gs[n_row, n_col])
+            #t_idx = (timesteps // 16) * n_col if n_col < 15 else -1
+            img = torch.tensor(imgs[n_row, 0])
+            torchvision.utils.save_image(img, f"./denoiseImgs/{n_row}-{t_idx}.png")
+            #img = generated_images[t_idx][n_row].reshape(3, 32, 32).transpose([1, 2, 0])
+            #f_ax.imshow(np.array((img + 1.0) * 255 / 2, dtype=np.uint8))
+            #f_ax.axis("off")
 
 def getModel(device):
     model = UNetModel(
@@ -555,9 +563,10 @@ def sampleImageByModel():
     sampleModel(model, gaussian_diffusion)
 
 def showDenoiseProcess():
+    model.load_state_dict(torch.load('./pth/ddpm_cifar.pth'))
     showDenoiseSteps(model, gaussian_diffusion)
 
-showAddNoiseToImage()
-trainDdpmModel()
-sampleImageByModel()
+#showAddNoiseToImage()
+#trainDdpmModel()
+#sampleImageByModel()
 showDenoiseProcess()

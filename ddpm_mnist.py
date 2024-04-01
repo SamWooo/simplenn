@@ -14,7 +14,7 @@ from torchvision import datasets, transforms
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-%matplotlib inline
+#%matplotlib inline
 
 # use sinusoidal position embedding to encode time step (https://arxiv.org/abs/1706.03762)
 def timestep_embedding(timesteps, dim, max_period=10000):
@@ -465,7 +465,7 @@ def getModel(device):
     model.to(device)
     return model
 
-def trainModel(epochs = 10, device, gaussianModel, optimizer, train_loader):
+def trainModel(epochs, device, gaussianModel, optimizer, train_loader):
     start_time = time.time()
     for epoch in range(epochs):
         for step, (images, labels) in enumerate(train_loader):
@@ -500,7 +500,7 @@ def sampleModel(model, gaussianModel):
             f_ax.imshow((imgs[n_row, n_col] + 1.0) * 255 / 2, cmap="gray")
             f_ax.axis("off")
 
-def ShowDenoiseSteps(model, gaussianModel):
+def showDenoiseSteps(model, gaussianModel):
     generated_images = gaussianModel.sample(model, 28, batch_size=64, channels=1)
     fig = plt.figure(figsize=(12, 12), constrained_layout=True)
     gs = fig.add_gridspec(16, 16)
@@ -549,7 +549,7 @@ def sampleImageByModel():
 def showDenoiseProcess():
     showDenoiseSteps(model, gaussian_diffusion)
 
-showAddNoiseToImage()
-trainDdpmModel()
+#showAddNoiseToImage()
+#trainDdpmModel()
 sampleImageByModel()
 showDenoiseProcess()

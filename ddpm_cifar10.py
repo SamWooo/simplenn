@@ -524,9 +524,10 @@ def getTrainDataLoader(batch_size):
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
     ])
-
-    dataset = datasets.CIFAR10('/data', train=True, download=True, transform=transform)
-    train_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    
+    num_worker = 8
+    dataset = datasets.CIFAR10(root='./data/', train=True, download=True, transform=transform)
+    train_loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=num_worker)
     return train_loader
 
 device = "cuda" if torch.cuda.is_available() else "cpu"

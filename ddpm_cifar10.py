@@ -548,8 +548,10 @@ def showAddNoiseToImage():
 def trainDdpmModel():
     epochs = 200
     trainModel(epochs, device, gaussian_diffusion, optimizer, dataLoader)
+    torch.save(model.state_dict(), './pth/ddpm_cifar.pth')
 
 def sampleImageByModel():
+    model.load_state_dict(torch.load('./pth/ddpm_cifar.pth'))
     sampleModel(model, gaussian_diffusion)
 
 def showDenoiseProcess():

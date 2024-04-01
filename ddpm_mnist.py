@@ -1,5 +1,7 @@
 import os
 import math
+import time
+import datetime
 from abc import abstractmethod
 
 from PIL import Image
@@ -464,6 +466,7 @@ def getModel(device):
     return model
 
 def trainModel(epochs = 10, device, gaussianModel, optimizer, train_loader):
+    start_time = time.time()
     for epoch in range(epochs):
         for step, (images, labels) in enumerate(train_loader):
             optimizer.zero_grad()
@@ -481,6 +484,8 @@ def trainModel(epochs = 10, device, gaussianModel, optimizer, train_loader):
 
             loss.backward()
             optimizer.step()
+    cost_time = time.time() - start_time
+    print('training cost time: ', cost_time)
 
 def sampleModel(model, gaussianModel):
     generated_images = gaussianModel.sample(model, 28, batch_size=64, channels=1)

@@ -559,11 +559,13 @@ def sampleModel(model, gaussianModel):
 
 def ddimSampleModel(model, gaussianModel):
     generated_images = gaussianModel.ddim_sample(model, 32, batch_size=64, channels=3)
-    imgs = generated_images[-1].reshape(8, 8, 3, 32, 32)
-    for n_row in range(8):
-        for n_col in range(8):
-            img = torch.tensor(imgs[n_row, n_col])
-            torchvision.utils.save_image(img, f"./imgs/{n_row}-{n_col}.png")
+    img = generated_images[-1]#.reshape(8, 8, 3, 32, 32)
+    img = torch.tensor(img)
+    torchvision.utils.save_image(img, f"./ddim.png")
+    #for n_row in range(8):
+    #    for n_col in range(8):
+    #        img = torch.tensor(imgs[n_row, n_col])
+    #        torchvision.utils.save_image(img, f"./imgs/{n_row}-{n_col}.png")
 
 def showDenoiseSteps(model, gaussianModel):
     generated_images = gaussianModel.sample(model, 32, batch_size=64, channels=3)

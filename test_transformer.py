@@ -456,3 +456,11 @@ def train():
         sched.step() # 更新学习率
 
 train()
+torch.save(model.state_dict(), './pth/test_transformer.pth')
+
+model.load_state_dict(torch.load('./pth/test_transformer.pth'))
+
+for i, (x, y) in enumerate(loader):
+    target = predict(x)
+    print(target)
+    break

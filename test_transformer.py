@@ -330,8 +330,8 @@ class DecoderLayer(torch.nn.Module):
         y = self.mhl(y, y, y, mask_tril_y)
         # 结合x和y的注意力计算，维度不变
         # [b,50,32],[b,50,32]->[b,50,32]
-        #y = self.mh2(y, x, x, mask_pad_x)
-        y = self.mh2(x, x, y, mask_pad_x)
+        y = self.mh2(y, x, x, mask_pad_x)
+        #y = self.mh2(x, x, y, mask_pad_x)
         # 全连接输出，维度不变
         # [b,50,32]->[b,50,32]
         y = self.fc(y)
